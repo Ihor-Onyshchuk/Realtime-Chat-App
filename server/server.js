@@ -42,5 +42,5 @@ const yoga = createYoga({ schema });
 const server = http.createServer(yoga);
 
 server.listen(4000, () => {
-  console.log(`Server on http://localhost:4000}`);
+  console.log(`Server on http://localhost:4000`);
 });
