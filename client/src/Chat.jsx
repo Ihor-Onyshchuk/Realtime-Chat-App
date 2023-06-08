@@ -10,7 +10,7 @@ import {
 import { Button, Col, Container, FormInput, Row } from "shards-react";
 
 const client = new ApolloClient({
-  uri: "http://localhost:4000/graphql",
+  uri: "http://localhost:4000/",
   cache: new InMemoryCache(),
 });
 
