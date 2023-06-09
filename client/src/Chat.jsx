@@ -3,23 +3,32 @@ import {
   ApolloClient,
   InMemoryCache,
   ApolloProvider,
-  gql,
-  useQuery,
+  useSubscription,
   useMutation,
+  gql,
 } from "@apollo/client";
-import { Button, Col, Container, FormInput, Row } from "shards-react";
+import { WebSocketLink } from "@apollo/client/link/ws";
+import { Container, Row, Col, FormInput, Button } from "shards-react";
+
+const link = new WebSocketLink({
+  uri: `ws://localhost:4000/`,
+  options: {
+    reconnect: true,
+  },
+});
 
 const client = new ApolloClient({
+  link,
   uri: "http://localhost:4000/",
   cache: new InMemoryCache(),
 });
 
 const GET_MESSAGES = gql`
-  query {
+  subscription {
     messages {
       id
-      user
       content
+      user
     }
   }
 `;
@@ -31,22 +40,21 @@ const POST_MESSAGE = gql`
 `;
 
 const Messages = ({ user }) => {
-  const { data } = useQuery(GET_MESSAGES);
-
+  const { data } = useSubscription(GET_MESSAGES);
   if (!data) {
-    return null
+    return null;
   }
 
   return (
     <>
       {data.messages.map(({ id, user: messageUser, content }) => (
         <div
+          key={id}
           style={{
             display: "flex",
             justifyContent: user === messageUser ? "flex-end" : "flex-start",
             paddingBottom: "1em",
           }}
-          key={id}
         >
           {user !== messageUser && (
             <div
@@ -66,7 +74,7 @@ const Messages = ({ user }) => {
           )}
           <div
             style={{
-              background: user === messageUser ? "#58bf56" : "#e5e6ea",
+              background: user === messageUser ? "#28a745" : "#e5e6ea",
               color: user === messageUser ? "white" : "black",
               padding: "1em",
               borderRadius: "1em",
@@ -78,29 +86,27 @@ const Messages = ({ user }) => {
         </div>
       ))}
     </>
-  )
-}
+  );
+};
 
 const Chat = () => {
-  const [state, setState] = React.useState({
-    user: "Ihor",
+  const [state, stateSet] = React.useState({
+    user: "Bob",
     content: "",
   });
-
-  const [ postMessage ] = useMutation(POST_MESSAGE);
+  const [postMessage] = useMutation(POST_MESSAGE);
 
   const onSend = () => {
-    if (state.content.trim()) {
+    if (state.content.length > 0) {
       postMessage({
-        variables: state
+        variables: state,
       });
     }
-    setState({
+    stateSet({
       ...state,
-      content: '',
+      content: "",
     });
-  }
-
+  };
   return (
     <Container>
       <Messages user={state.user} />
@@ -110,19 +116,19 @@ const Chat = () => {
             label="User"
             value={state.user}
             onChange={(evt) =>
-              setState({
+              stateSet({
                 ...state,
                 user: evt.target.value,
               })
             }
           />
         </Col>
-        <Col xs={8} >
+        <Col xs={8}>
           <FormInput
             label="Content"
             value={state.content}
             onChange={(evt) =>
-              setState({
+              stateSet({
                 ...state,
                 content: evt.target.value,
               })
@@ -134,13 +140,15 @@ const Chat = () => {
             }}
           />
         </Col>
-        <Col xs={2} >
-          <Button onClick={() => onSend()} >Send</Button>
+        <Col xs={2} style={{ padding: 0 }}>
+          <Button onClick={() => onSend()} style={{ width: "100%" }}>
+            Send
+          </Button>
         </Col>
       </Row>
     </Container>
-  )
-}
+  );
+};
 
 export default () => (
   <ApolloProvider client={client}>
